@@ -1,17 +1,18 @@
 from sqlalchemy import create_engine, text
-from faker import Faker
+from faker import Faker   
 import random
 from datetime import datetime, timedelta
 
 # ==========================================================
 # CONFIGURACIÓN DE CONEXIÓN
 # ==========================================================
-DB_USER = "root"
-DB_PASSWORD = ""
-DB_HOST = "localhost"
-DB_NAME = "alimentos"
+DB_USER = "sql5809882"
+DB_PASSWORD = "GPttLkDvVL"
+DB_HOST = "sql5.freesqldatabase.com"
+DB_NAME = "sql5809882"
 
 engine = create_engine(f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}")
+
 fake = Faker()
 
 
