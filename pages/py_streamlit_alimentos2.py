@@ -40,17 +40,12 @@ st.markdown("""
         padding: 16px;
         border-radius: 14px;
         background: linear-gradient(135deg,#a8e6cf,#81ecec);
-        text-align: center;
-        font-size: 20px;
-        font-weight: 900;
-        color: #1e3d32;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-        margin-bottom: 10px;
     }
 
     section[data-testid="stSidebar"] {
         background: linear-gradient(135deg, #e9fff2 0%, #d6f7e6 100%);
         border-right: 2px solid #c3efd6;
+        text-align: center;
     }
 
 </style>
@@ -113,10 +108,9 @@ df["retraso_min"] = df["retraso_min"].clip(lower=0)
 # ---------------------------------------------------------
 # SIDEBAR
 # ---------------------------------------------------------
-st.sidebar.image(
-    r"C:\Users\HP\Pictures\Screenshots\Captura de pantalla 2025-12-02 145947.png",
-    width=120
-)
+
+# LOGO CORRECTO
+st.sidebar.image("images/logo_yummy.png", width=120)
 
 st.sidebar.title("⚙️ Opciones")
 
@@ -125,6 +119,7 @@ repartidor_sel = st.sidebar.selectbox("👤 Repartidor", repartidores)
 
 min_fecha = df["fecha_pedido"].min().date()
 max_fecha = df["fecha_pedido"].max().date()
+
 rango_fecha = st.sidebar.date_input("📅 Rango de fechas", [min_fecha, max_fecha])
 
 mostrar_graficos = st.sidebar.checkbox("📊 Mostrar gráficas", value=True)
@@ -223,7 +218,7 @@ if mostrar_graficos:
             st.info("No hay datos suficientes para graficar duración.")
 
     # -----------------------------------------------------
-    # 📊 Gráfico extra: Retraso promedio por repartidor
+    # Gráfico extra: Retraso promedio por repartidor
     # -----------------------------------------------------
     with st.expander("📈 Retraso promedio por repartidor"):
         df_rep = df_filtrado.groupby("nombre_repartidor", as_index=False)["retraso_min"].mean()

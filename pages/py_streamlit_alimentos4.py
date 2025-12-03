@@ -105,10 +105,8 @@ df = pd.read_sql_query(query, engine)
 # ---------------------------------------------------------
 # SIDEBAR – LOGO + FILTROS
 # ---------------------------------------------------------
-st.sidebar.image(
-    r"C:\Users\HP\Pictures\Screenshots\Captura de pantalla 2025-12-02 145947.png",
-    width=120
-)
+# LOGO CORRECTO
+st.sidebar.image("images/logo_yummy.png", width=120)
 
 st.sidebar.title("🎯 Filtros")
 

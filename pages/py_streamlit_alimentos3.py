@@ -78,14 +78,12 @@ st.markdown("""
 # ==========================================================
 # CONEXIÓN MYSQL
 # ==========================================================
-usuario = "root"
-contraseña = ""
-host = "localhost"
-puerto = 3306
-base = "alimentos"
+DB_USER = "sql5809882"
+DB_PASSWORD = "GPttLkDvVL"
+DB_HOST = "sql5.freesqldatabase.com"
+DB_NAME = "sql5809882"
 
-conexion_str = f"mysql+pymysql://{usuario}:{contraseña}@{host}:{puerto}/{base}"
-engine = create_engine(conexion_str)
+engine = create_engine(f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}")
 
 # ==========================================================
 # CONSULTAS SQL
@@ -127,6 +125,8 @@ st.markdown("<h1>📊 Ventas por Día</h1>", unsafe_allow_html=True)
 # ==========================================================
 # FILTROS
 # ==========================================================
+# LOGO CORRECTO
+st.sidebar.image("images/logo_yummy.png", width=120)
 st.sidebar.title("🔍 Filtros")
 
 fecha_min = df_ventas["fecha"].min()

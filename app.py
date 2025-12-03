@@ -70,14 +70,14 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------
-# LOGO
+# LOGO CENTRADO
 # -----------------------------------------------
 
-col1, col2, col3 = st.columns([20, 16, 14])  # Proporción: centro perfecto
+col1, col2, col3 = st.columns([20, 16, 14])  # Proporción mejor centrada
 
 with col2:
     st.image(
-        r"C:\Users\HP\Pictures\Screenshots\Captura de pantalla 2025-12-02 145947.png",
+        "images/logo_yummy.png",   # RUTA CORRECTA
         width=180
     )
 
@@ -119,4 +119,4 @@ st.markdown("""
 # -----------------------------------------------
 # PIE DE PÁGINA
 # -----------------------------------------------
-st.caption("Proyecto Final – Base de Datos I – UNIVALLE 2025") 
+st.caption("Proyecto Final – Base de Datos I – UNIVALLE 2025")
