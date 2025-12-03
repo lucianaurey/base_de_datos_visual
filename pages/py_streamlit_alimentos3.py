@@ -4,7 +4,7 @@ import plotly.express as px
 from sqlalchemy import create_engine
 
 # ==========================================================
-# CONFIGURACIÓN DE PÁGINA
+# CONFIGURACIÓN DE LA PÁGINA
 # ==========================================================
 st.set_page_config(
     page_title="Ventas por Día",
@@ -13,7 +13,7 @@ st.set_page_config(
 )
 
 # ==========================================================
-# CSS ESTILO VERDE PASTEL YUMMY
+# CSS ESTILO VERDE PASTEL Y TARJETAS KPI
 # ==========================================================
 st.markdown("""
 <style>
@@ -26,7 +26,6 @@ st.markdown("""
         font-size: 42px !important;
         font-weight: 900 !important;
         text-align: center;
-        margin-bottom: 5px;
     }
 
     h3 {
@@ -37,16 +36,27 @@ st.markdown("""
         padding-left: 12px;
     }
 
-    .metric {
-        padding: 16px;
-        border-radius: 14px;
-        background: linear-gradient(135deg,#a8e6cf,#81ecec);
+    /* Tarjetas KPI estilo Yummy pastel */
+    .kpi-box {
+        background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        padding: 18px;
+        border-radius: 18px;
         text-align: center;
-        font-size: 20px;
-        font-weight: 900;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        font-weight: 700;
         color: #1e3d32;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-        margin-bottom: 10px;
+        border: 1px solid #ffffff55;
+    }
+
+    .kpi-title {
+        font-size: 18px;
+        font-weight: 900;
+    }
+
+    .kpi-value {
+        font-size: 26px;
+        font-weight: 900;
+        margin-top: 6px;
     }
 
     section[data-testid="stSidebar"] {
@@ -68,17 +78,17 @@ st.markdown("""
 # ==========================================================
 # CONEXIÓN MYSQL
 # ==========================================================
-usuario = 'root'
-contraseña = ''
-host = 'localhost'
+usuario = "root"
+contraseña = ""
+host = "localhost"
 puerto = 3306
-base = 'alimentos'
+base = "alimentos"
 
-conexion_str = f'mysql+pymysql://{usuario}:{contraseña}@{host}:{puerto}/{base}'
+conexion_str = f"mysql+pymysql://{usuario}:{contraseña}@{host}:{puerto}/{base}"
 engine = create_engine(conexion_str)
 
 # ==========================================================
-# CONSULTAS PRINCIPALES
+# CONSULTAS SQL
 # ==========================================================
 query_ventas = """
 SELECT 
@@ -110,13 +120,12 @@ df_ventas["fecha"] = pd.to_datetime(df_ventas["fecha"])
 df_ventas["dia_semana"] = df_ventas["fecha"].dt.day_name()
 
 # ==========================================================
-# TÍTULO Y DESCRIPCIÓN
+# TÍTULO
 # ==========================================================
 st.markdown("<h1>📊 Ventas por Día</h1>", unsafe_allow_html=True)
-st.write("Dashboard con análisis diario de ventas, pedidos y productos más vendidos.")
 
 # ==========================================================
-# SIDEBAR – FILTROS
+# FILTROS
 # ==========================================================
 st.sidebar.title("🔍 Filtros")
 
@@ -166,23 +175,55 @@ df_filtrado = df_ventas[
 df_top_filtered = df_top[df_top["producto"].isin(prod_select)]
 
 # ==========================================================
-# KPIs / MÉTRICAS
+# CALCULAR KPIs
 # ==========================================================
-st.markdown("### 📌 Indicadores Clave")
+total_pedidos = df_filtrado["total_pedidos"].sum()
+total_ventas = df_filtrado["total_ventas"].sum()
+ticket_promedio = total_ventas / total_pedidos if total_pedidos > 0 else 0
+
+# ==========================================================
+# TARJETAS KPI
+# ==========================================================
+st.markdown("### 📌 Resumen General")
 
 c1, c2, c3, c4 = st.columns(4)
 
-c1.metric("💵 Ventas Totales", f"${df_filtrado['total_ventas'].sum():,.2f}")
-c2.metric("🛒 Pedidos Totales", df_filtrado["total_pedidos"].sum())
-c3.metric("📆 Días Analizados", df_filtrado.shape[0])
-c4.metric("💳 Ticket Promedio", 
-          f"${(df_filtrado['total_ventas'].sum() / df_filtrado['total_pedidos'].sum()):,.2f}" 
-          if df_filtrado["total_pedidos"].sum() > 0 else "0")
+with c1:
+    st.markdown(f"""
+    <div class="kpi-box">
+        <div class="kpi-title">💵 Ventas Totales</div>
+        <div class="kpi-value">${total_ventas:,.2f}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with c2:
+    st.markdown(f"""
+    <div class="kpi-box">
+        <div class="kpi-title">🛒 Pedidos Totales</div>
+        <div class="kpi-value">{total_pedidos}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with c3:
+    st.markdown(f"""
+    <div class="kpi-box">
+        <div class="kpi-title">📆 Días Analizados</div>
+        <div class="kpi-value">{df_filtrado.shape[0]}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with c4:
+    st.markdown(f"""
+    <div class="kpi-box">
+        <div class="kpi-title">💳 Ticket Promedio</div>
+        <div class="kpi-value">${ticket_promedio:,.2f}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
 st.divider()
 
 # ==========================================================
-# GRÁFICOS EN EXPANDERS
+# VISUALIZACIONES
 # ==========================================================
 st.subheader("📊 Visualizaciones")
 
@@ -201,14 +242,33 @@ with st.expander("🏆 Top productos más vendidos"):
     fig3.update_traces(marker_color="#a29bfe", textposition="outside")
     st.plotly_chart(fig3, use_container_width=True)
 
-# ==========================================================
-# TABLA Y EXPORTACIÓN
-# ==========================================================
-st.subheader("📋 Datos filtrados")
-st.dataframe(df_filtrado, use_container_width=True)
+with st.expander("📅 Ventas por día de la semana"):
+    df_semana = df_filtrado.groupby("dia_semana", as_index=False)["total_ventas"].sum()
 
-csv = df_filtrado.to_csv(index=False)
-st.download_button("📥 Descargar CSV", csv, "ventas_filtradas.csv", "text/csv")
+    orden_dias = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    df_semana["dia_semana"] = pd.Categorical(df_semana["dia_semana"], categories=orden_dias, ordered=True)
+    df_semana = df_semana.sort_values("dia_semana")
+
+    fig4 = px.bar(
+        df_semana,
+        x="dia_semana",
+        y="total_ventas",
+        text="total_ventas",
+        labels={"dia_semana": "Día", "total_ventas": "Ventas ($)"},
+        color_discrete_sequence=["#ff7675"]
+    )
+    fig4.update_traces(textposition="outside")
+    st.plotly_chart(fig4, use_container_width=True)
+
+# ==========================================================
+# TABLA + EXPORTACIÓN
+# ==========================================================
+with st.expander("📋 Mostrar Tabla"):
+    st.subheader("📋 Datos filtrados")
+    st.dataframe(df_filtrado, use_container_width=True)
+
+    csv = df_filtrado.to_csv(index=False)
+    st.download_button("📥 Descargar CSV", csv, "ventas_filtradas.csv", "text/csv")
 
 # ==========================================================
 # ANÁLISIS AUTOMÁTICO
@@ -217,7 +277,9 @@ st.subheader("🗣️ Análisis Automático")
 
 st.write(f"""
 ✔ El análisis incluye ventas entre *{rango_fechas[0]}* y *{rango_fechas[1]}*.  
-✔ Se registraron *{df_filtrado['total_pedidos'].sum()} pedidos* en total.  
-✔ Las ventas alcanzaron *${df_filtrado['total_ventas'].sum():,.2f}*.  
-✔ El filtro aplicado permite observar el comportamiento por días, niveles de ventas y productos.
+✔ Se registraron *{total_pedidos} pedidos* en total.  
+✔ Las ventas alcanzaron *${total_ventas:,.2f}*.  
+✔ El filtro aplicado permite observar tendencias por día, ventas mínimas y productos.
 """)
+
+st.caption("Proyecto Final – Base de Datos I – UNIVALLE 2025")

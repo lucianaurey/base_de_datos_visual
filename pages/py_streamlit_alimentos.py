@@ -232,4 +232,4 @@ with st.expander("📋 Mostrar Tabla"):
     st.dataframe(df_filtrado, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-st.caption("YUMMY DELIVERY — UNIVALLE PROYECTO BASE DE DATOS I")
+st.caption("Proyecto Final – Base de Datos I – UNIVALLE 2025")

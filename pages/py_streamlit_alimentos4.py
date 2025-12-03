@@ -1,7 +1,6 @@
 import pandas as pd
 import streamlit as st
 from sqlalchemy import create_engine
-import altair as alt
 import plotly.express as px
 
 # ---------------------------------------------------------
@@ -10,20 +9,23 @@ import plotly.express as px
 st.set_page_config(page_title="Consumo por Usuario", page_icon="🧍", layout="wide")
 
 # ---------------------------------------------------------
-# CSS VERDE PASTEL
+# CSS VERDE PASTEL + TARJETAS KPI BONITAS
 # ---------------------------------------------------------
 st.markdown("""
 <style>
+
     .stApp {
-        background: linear-gradient(135deg, #e8f8f5 0%, #d5f5e3 40%, #f0faf5 100%);
+        background: linear-gradient(135deg, #e8f8f5, #d5f5e3, #f0faf5);
     }
+
     h1 {
         color: #2e5e4e !important;
-        font-size: 42px !important;
+        font-size: 46px !important;
         font-weight: 900 !important;
         text-align: center;
-        margin-bottom: 5px;
+        margin-bottom: 10px;
     }
+
     h3 {
         color: #355e3b !important;
         font-weight: 700 !important;
@@ -31,21 +33,44 @@ st.markdown("""
         border-left: 6px solid #74d3ae;
         padding-left: 12px;
     }
-    .metric {
-        padding: 16px;
-        border-radius: 14px;
-        background: linear-gradient(135deg,#a8e6cf,#81ecec);
+
+    /* Tarjetas KPI BONITAS */
+    .kpi-box {
+        background: white;
+        padding: 18px;
+        border-radius: 18px;
         text-align: center;
-        font-size: 20px;
-        font-weight: 900;
-        color: #1e3d32;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-        margin-bottom: 10px;
+        box-shadow: 0px 4px 12px rgba(0,0,0,0.12);
+        border: 2px solid #a8e6cf;
+        margin-bottom: 15px;
     }
+
+    .kpi-title {
+        font-size: 18px;
+        font-weight: 900;
+        color: #2e5e4e;
+    }
+
+    .kpi-value {
+        font-size: 28px;
+        font-weight: 900;
+        margin-top: 6px;
+        color: #1e3d32;
+    }
+
     section[data-testid="stSidebar"] {
-        background: linear-gradient(135deg, #e9fff2 0%, #d6f7e6 100%);
+        background: linear-gradient(135deg, #e9fff2, #d6f7e6);
         border-right: 2px solid #c3efd6;
     }
+
+    details {
+        background-color: #ffffff !important;
+        border: 1px solid #c8efd9 !important;
+        border-radius: 10px !important;
+        padding: 10px !important;
+        margin-bottom: 12px !important;
+    }
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -108,14 +133,35 @@ df_filtrado = df[
 st.markdown("<h1>🧍 Consumo por Usuario</h1>", unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# MÉTRICAS
+# KPIs BONITAS
 # ---------------------------------------------------------
 st.markdown("### 📌 Indicadores Clave")
+
 c1, c2, c3 = st.columns(3)
 
-c1.metric("👥 Clientes", df_filtrado.shape[0])
-c2.metric("📦 Total Pedidos", df_filtrado["total_pedidos"].sum())
-c3.metric("💵 Gasto Total", f"${df_filtrado['total_gastado'].sum():,.2f}")
+with c1:
+    st.markdown(f"""
+    <div class="kpi-box">
+        <div class="kpi-title">👥 Clientes</div>
+        <div class="kpi-value">{df_filtrado.shape[0]}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with c2:
+    st.markdown(f"""
+    <div class="kpi-box">
+        <div class="kpi-title">📦 Total Pedidos</div>
+        <div class="kpi-value">{df_filtrado['total_pedidos'].sum()}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with c3:
+    st.markdown(f"""
+    <div class="kpi-box">
+        <div class="kpi-title">💵 Total Gastado</div>
+        <div class="kpi-value">${df_filtrado['total_gastado'].sum():,.2f}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
 st.divider()
 
@@ -124,31 +170,61 @@ st.divider()
 # ---------------------------------------------------------
 st.subheader("📊 Visualizaciones")
 
+# ---------------------------------------------
+# 1. Pedidos por cliente
+# ---------------------------------------------
 with st.expander("📦 Pedidos por cliente"):
-    fig1 = px.bar(df_filtrado, x="cliente", y="total_pedidos", text="total_pedidos", color_discrete_sequence=["#74b9ff"])
+    fig1 = px.bar(df_filtrado, x="cliente", y="total_pedidos", text="total_pedidos",
+                  color_discrete_sequence=["#74b9ff"])
     fig1.update_traces(textposition="outside")
     st.plotly_chart(fig1, use_container_width=True)
 
+# ---------------------------------------------
+# 2. Gasto total
+# ---------------------------------------------
 with st.expander("💵 Gasto total por cliente"):
-    fig2 = px.bar(df_filtrado, x="cliente", y="total_gastado", text="total_gastado", color_discrete_sequence=["#a29bfe"])
+    fig2 = px.bar(df_filtrado, x="cliente", y="total_gastado", text="total_gastado",
+                  color_discrete_sequence=["#a29bfe"])
     fig2.update_traces(textposition="outside")
     st.plotly_chart(fig2, use_container_width=True)
 
+# ---------------------------------------------
+# 3. Ticket promedio
+# ---------------------------------------------
 with st.expander("💳 Ticket promedio por cliente"):
-    fig3 = px.bar(df_filtrado, x="cliente", y="ticket_promedio", text="ticket_promedio", color_discrete_sequence=["#ff7675"])
+    fig3 = px.bar(df_filtrado, x="cliente", y="ticket_promedio", text="ticket_promedio",
+                  color_discrete_sequence=["#ff7675"])
     fig3.update_traces(textposition="outside")
     st.plotly_chart(fig3, use_container_width=True)
+
+# ---------------------------------------------
+# ⭐ 4. NUEVO GRÁFICO PREMIUM: Distribución del gasto
+# ---------------------------------------------
+with st.expander("📈 Distribución del gasto (scatterplot)"):
+    fig4 = px.scatter(
+        df_filtrado,
+        x="total_pedidos",
+        y="total_gastado",
+        size="ticket_promedio",
+        color="total_gastado",
+        hover_name="cliente",
+        labels={"total_pedidos": "Pedidos", "total_gastado": "Gasto ($)"},
+        title="Relación entre pedidos y gasto total"
+    )
+    fig4.update_layout(template="plotly_white", height=500)
+    st.plotly_chart(fig4, use_container_width=True)
 
 # ---------------------------------------------------------
 # TABLA FINAL + EXPORTACIÓN
 # ---------------------------------------------------------
-st.subheader("📋 Datos filtrados")
-st.dataframe(df_filtrado, use_container_width=True)
+with st.expander("📋 Mostrar Tabla"):
+    st.subheader("📋 Datos filtrados")
+    st.dataframe(df_filtrado, use_container_width=True)
 
-csv = df_filtrado.to_csv(index=False)
-st.download_button("📥 Descargar CSV", csv, "consumo_por_usuario.csv", "text/csv")
+    csv = df_filtrado.to_csv(index=False)
+    st.download_button("📥 Descargar CSV", csv, "consumo_por_usuario.csv", "text/csv")
 
 # ---------------------------------------------------------
 # PIE DE PÁGINA
 # ---------------------------------------------------------
-st.caption("YUMMY DELIVERY — Dashboard de Clientes")
+st.caption("Proyecto Final – Base de Datos I – UNIVALLE 2025")

@@ -72,13 +72,15 @@ st.markdown("""
 # -----------------------------------------------
 # LOGO
 # -----------------------------------------------
-col1, col2, col3 = st.columns([1, 2, 1])  # proporciones (izquierda, centro, derecha)
+
+col1, col2, col3 = st.columns([20, 16, 14])  # Proporción: centro perfecto
 
 with col2:
     st.image(
         r"C:\Users\HP\Pictures\Screenshots\Captura de pantalla 2025-12-02 145947.png",
         width=180
     )
+
 # -----------------------------------------------
 # TÍTULO
 # -----------------------------------------------
@@ -117,4 +119,4 @@ st.markdown("""
 # -----------------------------------------------
 # PIE DE PÁGINA
 # -----------------------------------------------
-st.caption("Proyecto Final – Base de Datos I – UNIVALLE 2025")
+st.caption("Proyecto Final – Base de Datos I – UNIVALLE 2025") 

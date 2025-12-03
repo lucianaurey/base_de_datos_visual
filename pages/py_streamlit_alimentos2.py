@@ -11,7 +11,7 @@ import pymysql
 st.set_page_config(page_title="Seguimiento de Pedidos", page_icon="🚚", layout="wide")
 
 # ---------------------------------------------------------
-# CSS VERDE PASTEL SUAVE (igual al otro dashboard)
+# CSS VERDE PASTEL SUAVE
 # ---------------------------------------------------------
 st.markdown("""
 <style>
@@ -81,13 +81,9 @@ SELECT
     rp.id_repartidor,
     r.nombre AS nombre_repartidor,
     s.estado,
-    s.tiempo_estimado AS hora_salida,
+    s.tiempo_estimado,
     s.hora_llegada,
-    TIMESTAMPDIFF(
-        MINUTE,
-        s.tiempo_estimado,
-        s.hora_llegada
-    ) AS retraso_min
+    TIMESTAMPDIFF(MINUTE, s.tiempo_estimado, s.hora_llegada) AS retraso_min
 FROM seguimiento_pedido s
 INNER JOIN repartidor_pedido rp 
     ON s.id_repartidor_pedido = rp.id_repartidor_pedido
@@ -103,12 +99,19 @@ def cargar_datos():
 
 df = cargar_datos()
 
+# ---------------------------------------------------------
+# CORRECCIÓN DE FECHAS
+# ---------------------------------------------------------
 df["fecha_pedido"] = pd.to_datetime(df["fecha_pedido"], errors="coerce")
-df["hora_salida"] = pd.to_datetime(df["hora_salida"], errors="coerce")
-df["hora_llegada"] = pd.to_datetime(df["hora_llegada"], errors="coerce")
+
+df["tiempo_estimado"] = pd.to_datetime(df["tiempo_estimado"], errors="coerce") + pd.to_timedelta("08:00:00")
+df["hora_llegada"] = pd.to_datetime(df["hora_llegada"], errors="coerce") + pd.to_timedelta("09:00:00")
+
+df["retraso_min"] = (df["hora_llegada"] - df["tiempo_estimado"]).dt.total_seconds() / 60
+df["retraso_min"] = df["retraso_min"].clip(lower=0)
 
 # ---------------------------------------------------------
-# SIDEBAR — LOGO + FILTROS
+# SIDEBAR
 # ---------------------------------------------------------
 st.sidebar.image(
     r"C:\Users\HP\Pictures\Screenshots\Captura de pantalla 2025-12-02 145947.png",
@@ -128,7 +131,7 @@ mostrar_graficos = st.sidebar.checkbox("📊 Mostrar gráficas", value=True)
 mostrar_tabla = st.sidebar.checkbox("📋 Mostrar tabla", value=True)
 
 # ---------------------------------------------------------
-# FILTRAR
+# FILTROS
 # ---------------------------------------------------------
 df_filtrado = df.copy()
 
@@ -157,6 +160,9 @@ st.divider()
 if mostrar_graficos:
     st.subheader("📊 Visualizaciones")
 
+    # -----------------------------------------------------
+    # Retraso por pedido
+    # -----------------------------------------------------
     with st.expander("📊 Retraso por pedido"):
         df_bar = df_filtrado.dropna(subset=["retraso_min"])
         if not df_bar.empty:
@@ -165,56 +171,87 @@ if mostrar_graficos:
                 x="id_pedido",
                 y="retraso_min",
                 text="retraso_min",
-                labels={"id_pedido": "ID Pedido", "retraso_min": "Retraso (min)"},
+                labels={"id_pedido": "Pedido", "retraso_min": "Retraso (min)"}
             )
-            fig.update_layout(template="plotly_white", height=450, title_x=0.5)
+            fig.update_traces(marker_color="#74b9ff", textposition="outside")
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("No hay datos de retraso disponibles.")
 
+    # -----------------------------------------------------
+    # Distribución de estados
+    # -----------------------------------------------------
     with st.expander("🥧 Distribución de estados"):
         conteo_estado = df_filtrado["estado"].fillna("Desconocido").value_counts().reset_index()
         conteo_estado.columns = ["estado", "cantidad"]
+
         fig = px.pie(
             conteo_estado,
             names="estado",
             values="cantidad",
             hole=0.3
         )
-        fig.update_layout(template="plotly_white", height=450, title_x=0.5)
         st.plotly_chart(fig, use_container_width=True)
 
-    with st.expander("⏳ Línea de tiempo de entregas"):
-        df_timeline = df_filtrado.dropna(subset=["hora_salida", "hora_llegada"])
-        if not df_timeline.empty:
-            df_timeline["id_pedido_str"] = df_timeline["id_pedido"].astype(str)
-            fig = px.timeline(
-                df_timeline,
-                x_start="hora_salida",
-                x_end="hora_llegada",
-                y="id_pedido_str",
+    # -----------------------------------------------------
+    # Scatterplot: Duración por repartidor
+    # -----------------------------------------------------
+    with st.expander("📈 Duración de entregas por repartidor (scatterplot)"):
+        df_scatter = df_filtrado.copy()
+
+        df_scatter["duracion_min"] = (
+            df_scatter["hora_llegada"] - df_scatter["tiempo_estimado"]
+        ).dt.total_seconds() / 60
+
+        df_scatter = df_scatter.dropna(subset=["duracion_min"])
+
+        if not df_scatter.empty:
+            fig_scatter = px.scatter(
+                df_scatter,
+                x="nombre_repartidor",
+                y="duracion_min",
                 color="estado",
-                labels={"id_pedido_str": "Pedido"},
+                size="duracion_min",
+                hover_data=["id_pedido"],
+                labels={"nombre_repartidor": "Repartidor", "duracion_min": "Duración (min)"},
+                title="Duración de entregas por repartidor"
             )
-            fig.update_yaxes(autorange="reversed")
-            fig.update_layout(template="plotly_white", height=550, title_x=0.5)
-            st.plotly_chart(fig, use_container_width=True)
+
+            fig_scatter.update_layout(template="plotly_white", height=500, title_x=0.5)
+            st.plotly_chart(fig_scatter, use_container_width=True)
         else:
-            st.info("No hay datos para mostrar la línea de tiempo.")
+            st.info("No hay datos suficientes para graficar duración.")
+
+    # -----------------------------------------------------
+    # 📊 Gráfico extra: Retraso promedio por repartidor
+    # -----------------------------------------------------
+    with st.expander("📈 Retraso promedio por repartidor"):
+        df_rep = df_filtrado.groupby("nombre_repartidor", as_index=False)["retraso_min"].mean()
+        df_rep["retraso_min"] = df_rep["retraso_min"].round(1)
+
+        if not df_rep.empty:
+            fig_extra = px.bar(
+                df_rep,
+                x="nombre_repartidor",
+                y="retraso_min",
+                text="retraso_min",
+                color_discrete_sequence=["#ff7675"],
+                labels={"nombre_repartidor": "Repartidor", "retraso_min": "Retraso Promedio (min)"}
+            )
+            fig_extra.update_traces(textposition="outside")
+            st.plotly_chart(fig_extra, use_container_width=True)
+        else:
+            st.info("No hay datos suficientes para calcular retraso promedio.")
 
 # ---------------------------------------------------------
-# TABLA FINAL
+# TABLA GENERAL
 # ---------------------------------------------------------
-if mostrar_tabla:
-    st.subheader("📋 Tabla de datos")
-    st.dataframe(df_filtrado.reset_index(drop=True), use_container_width=True)
+with st.expander("📋 Mostrar Tabla"):
+    if mostrar_tabla:
+        st.subheader("📋 Datos filtrados")
+        st.dataframe(df_filtrado.reset_index(drop=True), use_container_width=True)
 
 # ---------------------------------------------------------
 # PIE DE PÁGINA
 # ---------------------------------------------------------
-st.markdown("""
-<div style="text-align:center; margin-top:30px;">
-    <img src="https://cdn-icons-png.flaticon.com/512/1995/1995574.png" width="70">
-    <p style="font-size:13px; color:#333;">Yummy Delivery — Seguimiento de Pedidos</p>
-</div>
-""", unsafe_allow_html=True)
+st.caption("Proyecto Final – Base de Datos I – UNIVALLE 2025")

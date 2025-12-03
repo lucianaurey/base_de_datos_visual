@@ -383,15 +383,35 @@ with engine.connect() as conn:
 
     # 24. Seguimiento pedido
     for _ in range(50):
-        conn.execute(text("""
-            INSERT INTO seguimiento_pedido (tiempo_estimado,hora_llegada,estado,id_repartidor_pedido)
-            VALUES (:t,:l,:e,:rp)
-        """), {
-            "t": fake.date_this_year(),
-            "l": fake.date_this_year(),
-            "e": random.choice(["En camino","Entregado","Cancelado"]),
-            "rp": random.randint(1,50)
-        })
+
+        # Generamos fecha base
+     fecha_estimada = fake.date_this_year()
+
+        # Hora estimada entre 8am y 6pm (realista)
+     hora_salida = fake.time_object().replace(
+            hour=random.randint(8, 18),
+            minute=random.randint(0, 59),
+            second=random.randint(0, 59)
+        )
+
+     tiempo_estimado = datetime.combine(fecha_estimada, hora_salida)
+
+        # Duración realista de la entrega (entre 15 y 90 minutos)
+     duracion_min = random.randint(15, 90)
+     hora_llegada = tiempo_estimado + timedelta(minutes=duracion_min)
+
+        # Inserción final en base de datos
+     conn.execute(text("""
+            INSERT INTO seguimiento_pedido 
+            (tiempo_estimado, hora_llegada, estado, id_repartidor_pedido)
+            VALUES (:t, :l, :e, :rp)
+         """), {
+            "t": tiempo_estimado,
+            "l": hora_llegada,
+            "e": random.choice(["En camino", "Entregado", "Cancelado"]),
+            "rp": random.randint(1, 50)
+    })
+
 
     # ==========================================================
     # SECCIÓN 7: EMPLEADO, SOPORTE, TELÉFONOS, DIRECCIONES
