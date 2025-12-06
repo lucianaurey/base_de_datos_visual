@@ -1,6 +1,6 @@
 import pandas as pd
 from sqlalchemy import create_engine, text
-import streamlit as st
+import streamlit as sT
 
 st.title('Blog UNIVALLE')
 st.set_page_config(page_title='Blog', page_icon='📝', layout='wide')
